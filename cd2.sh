@@ -6,9 +6,7 @@ if [[ $EUID -ne 0 ]]; then
     echo -e "非 root 用户，请用 sudo -i 切换并输入密码"
     exit 1
 fi
-
 VERSION='latest'
-
 if [ ! -n "$2" ]; then
   INSTALL_PATH='/opt/clouddrive'
 else
@@ -27,7 +25,6 @@ else
     fi
   fi
 fi
-
 # Get_OS
 os_type=$(uname)
 if [[ "$os_type" == "Linux" ]]; then
@@ -67,9 +64,7 @@ else
   echo -e "${RED_COLOR}系统未识别${RES}"
   exit 1
 fi
-
 clear
-
 
 # 架构检查
 # Get platform
@@ -78,9 +73,7 @@ if command -v uname >/dev/null 2>&1; then
 else
   platform=$(arch)
 fi
-
 ARCH="UNKNOWN"
-
 if [ "$platform" = "x86_64" ]; then
   ARCH=x86_64
 elif [ "$platform" = "aarch64" ]; then
@@ -93,7 +86,6 @@ else
   echo -e "\r\n${RED_COLOR}出错了，无法确定你当前的架构${RES}\r\n"
   exit 1
 fi
-
 # 端口检查
 if command -v netstat >/dev/null 2>&1; then
   check_port=$(netstat -lnp | grep 19798 | awk '{print $7}' | awk -F/ '{print $1}')
@@ -108,9 +100,7 @@ else
     check_port=$(netstat -lnp | grep 19798 | awk '{print $7}' | awk -F/ '{print $1}')
   fi
 fi
-
 clear
-
 CHECK() {
   if [ -f "$INSTALL_PATH/clouddrive" ]; then
     echo "此位置已经安装，请选择其他位置"
@@ -125,7 +115,6 @@ CHECK() {
     rm -rf $INSTALL_PATH && mkdir -p $INSTALL_PATH
   fi
 }
-
 INSTALL() {
   # Download procd fuse3
   if [[ "$check_procd" == "exist" ]]; then
@@ -193,11 +182,11 @@ INSTALL() {
       echo -e "${RED_COLOR}未知: $ID, 可能无法挂载${RES}"
   fi
 
+  # 指定固定的下载链接（已替换为你提供的版本）
+  DOWNLOAD_URL="https://github.com/cloud-fs/cloud-fs.github.io/releases/download/v0.9.5/clouddrive-2-linux-x86_64-0.9.5.tgz"
 
-  # Download clouddrive2
-  clouddrive_version=$(curl -s https://api.github.com/repos/cloud-fs/cloud-fs.github.io/releases/latest | grep -Eo "\s\"name\": \"clouddrive-2-$os-$ARCH-.+?\.tgz\"" | awk -F'"' '{print $4}')
   echo -e "\r\n${GREEN_COLOR}下载 clouddrive2 $VERSION ...${RES}"
-  curl -L ${mirror}https://github.com/cloud-fs/cloud-fs.github.io/releases/download/v0.9.5/clouddrive-2-linux-x86_64-0.9.5.tgz -o /tmp/clouddrive.tgz $CURL_BAR
+  curl -L ${mirror}${DOWNLOAD_URL} -o /tmp/clouddrive.tgz $CURL_BAR
   if [ $? -eq 0 ]; then
     echo -e "clouddrive 下载完成"
   else
@@ -218,7 +207,6 @@ INSTALL() {
       mkdir "/CloudNAS"
   fi
 }
-
 DOCKER() {
   # check op
   if [ ! -e "/dev/fuse" ]; then
@@ -229,7 +217,6 @@ DOCKER() {
       sed -i '/exit 0/i\mount --make-shared /' "/etc/rc.local"
     fi
   fi
-
 
   # run docker
   if [ "$check_docker" == "exist" ]; then
@@ -257,22 +244,18 @@ DOCKER() {
     fi
   fi
 }
-
 get-local-ipv4-using-hostname() {
   hostname -I 2>&- | awk '{print $1}'
 }
-
 # iproute2
 get-local-ipv4-using-iproute2() {
   # OR ip route get 1.2.3.4 | awk '{print $7}'
   ip -4 route 2>&- | awk '{print $NF}' | grep -Eo --color=never '[0-9]+(\.[0-9]+){3}'
 }
-
 # net-tools
 get-local-ipv4-using-ifconfig() {
   ( ifconfig 2>&- || ip addr show 2>&- ) | grep -Eo '^\s+inet\s+\S+' | grep -Eo '[0-9]+(\.[0-9]+){3}' | grep -Ev '127\.0\.0\.1|0\.0\.0\.0'
 }
-
 # 获取本机 IPv4 地址
 get-local-ipv4() {
   set -o pipefail
@@ -289,15 +272,11 @@ get-local-ipv4-select() {
   grep -m 1 "^10\." <<<"$ips" || \
   head -n 1 <<<"$ips"
 }
-
 # 获取外网IP
 get_public_ipv4() {
   curl -s ifconfig.me/ip | grep -Eo '([0-9]{1,3}\.){3}[0-9]{1,3}'
 }
-
 public_ipv4=$(get_public_ipv4)
-
-
 
 
 DAEMON() {
@@ -306,12 +285,9 @@ if [[ "$os_type" == "Linux" ]]; then
     touch /etc/init.d/clouddrive
     cat > /etc/init.d/clouddrive << EOF
 #!/bin/sh /etc/rc.common
-
 USE_PROCD=1
-
 START=99
 STOP=99
-
 start_service() {
     procd_open_instance
     procd_set_param command $INSTALL_PATH/clouddrive
@@ -370,7 +346,6 @@ EOF
   launchctl start /Library/LaunchDaemons/clouddrive.plist
 fi
 }
-
 SUCCESS() {
   clear
   echo -e "${GREEN_COLOR}clouddrive2 安装成功！${RES}\r\n"
@@ -380,7 +355,6 @@ SUCCESS() {
   fi 
   echo -e "内网访问地址：${GREEN_COLOR}http://$(get-local-ipv4-select):19798/${RES}\r\n"
 }
-
 UNINSTALL() {
   if [ "$check_docker" == "exist" ]; then
     if docker ps -a --format "{{.Names}}" | grep -q "clouddrive"; then
@@ -415,20 +389,16 @@ UNINSTALL() {
   echo -e "\r\n${GREEN_COLOR}clouddrive2 已在系统中移除！${RES}\r\n"
 }
 
-
 # CURL 进度显示
 if curl --help | grep progress-bar >/dev/null 2>&1; then # $CURL_BAR
   CURL_BAR="--progress-bar"
 fi
-
 # The temp directory must exist
 if [ ! -d "/tmp" ]; then
   mkdir -p /tmp
 fi
-
 # Fuck bt.cn (BT will use chattr to lock the php isolation config)
 chattr -i -R $INSTALL_PATH >/dev/null 2>&1
-
 if [ "$1" = "uninstall" ]; then
   UNINSTALL
 elif [ "$1" = "install" ]; then
